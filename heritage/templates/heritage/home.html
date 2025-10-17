@@ -1,0 +1,219 @@
+{% load static %}
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UNESCO Italia</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+    <link rel="stylesheet" href="{% static 'heritage/css/style.css' %}">
+
+    <style>
+      body { background-color: #f8f9fa; }
+      #map { height: 70vh; border-radius: 12px; margin-top: 1rem; }
+      footer { margin-top: 2rem; text-align: center; font-size: 0.9rem; color: #666; }
+    </style>
+  </head>
+
+  <body class="d-flex flex-column min-vh-100">
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'home' %}">🇮🇹 UNESCO Italia</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Mappa</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'itinerari_list' %}">Itinerari</a></li>
+            <li class="nav-item"><a class="nav-link" href="/admin/">Admin</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="flex-grow-1 container py-4">
+      <h1 class="mb-3 text-center">Siti Patrimonio UNESCO in Italia</h1>
+
+      <form class="row g-3" id="filter-form">
+        <div class="col-md-4">
+          <input class="form-control" type="text" name="q" id="q" placeholder="Cerca per nome o città ...">
+        </div>
+
+        <div class="col-md-3">
+          <select class="form-select" name="categoria" id="categoria">
+            <option value="">Tutte le categorie</option>
+            {% for c in categorie %}
+              <option value="{{ c.nome }}">{{ c.nome }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title mb-3">Accessibilità</h5>
+              <div class="row g-2">
+                <div class="col-6 col-md-3">
+                  <label class="form-label d-block">Sedia a rotelle</label>
+                  <select class="form-select" name="wheelchair" id="wheelchair">
+                    <option value="">Qualsiasi</option>
+                    <option value="1">Sì</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-3">
+                  <label class="form-label d-block">Ausili visivi</label>
+                  <select class="form-select" name="ausili_visivi" id="ausili_visivi">
+                    <option value="">Qualsiasi</option>
+                    <option value="1">Sì</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-3">
+                  <label class="form-label d-block">Supporto uditivo</label>
+                  <select class="form-select" name="supporto_uditivo" id="supporto_uditivo">
+                    <option value="">Qualsiasi</option>
+                    <option value="1">Sì</option>
+                    <option value="0">No</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-3">
+                  <label class="form-label d-block">Corrispondenza</label>
+                  <select class="form-select" name="acc_mode" id="acc_mode">
+                    <option value="any">Almeno uno</option>
+                    <option value="all">Tutti</option>
+                  </select>
+                </div>
+                <div class="col-12 mt-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="has_acc_data" id="has_acc_data">
+                    <label class="form-check-label" for="has_acc_data">
+                      Solo siti con dati di accessibilità disponibili
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div id="map"></div>
+
+      <div class="mt-4">
+        <h3>Elenco dei siti</h3>
+        <ul id="siti-list" class="list-group"></ul>
+      </div>
+    </main>
+
+    <footer class="py-3 bg-light">
+      <div class="container">
+        <p class="mb-0">© {% now "Y" %} UNESCO Italia – Progetto Django by Eliap</p>
+
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+      const map = L.map('map').setView([41.9, 12.5], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const markerGroup = L.layerGroup().addTo(map);
+
+      function caricaSiti() {
+        const url = new URL("{% url 'sites_geojson' %}", window.location.origin);
+        const q = document.getElementById('q')?.value || '';
+        const categoria = document.getElementById('categoria')?.value || '';
+        if (q) url.searchParams.set('q', q);
+        if (categoria) url.searchParams.set('categoria', categoria);
+
+        const wheelchair = document.getElementById('wheelchair')?.value ?? '';
+        const ausili_visivi = document.getElementById('ausili_visivi')?.value ?? '';
+        const supporto_uditivo = document.getElementById('supporto_uditivo')?.value ?? '';
+        const acc_mode = document.getElementById('acc_mode')?.value || 'any';
+        const has_acc_data = document.getElementById('has_acc_data')?.checked;
+
+        if (wheelchair !== '') url.searchParams.set('wheelchair', wheelchair);
+        if (ausili_visivi !== '') url.searchParams.set('ausili_visivi', ausili_visivi);
+        if (supporto_uditivo !== '') url.searchParams.set('supporto_uditivo', supporto_uditivo);
+        url.searchParams.set('acc_mode', acc_mode);
+        if (has_acc_data) url.searchParams.set('has_acc_data', '1');
+        else url.searchParams.delete('has_acc_data');
+
+        fetch(url)
+          .then(r => r.json())
+          .then(data => {
+            markerGroup.clearLayers();
+            const markerLayer = L.geoJSON(data, {
+              onEachFeature: (f, l) => {
+                const p = f.properties;
+                const acc = p.acc || {};
+                l.bindPopup(`
+                  <b>${p.name}</b><br>
+                  ${p.city||''} ${p.region||''}<br>${p.category||''}<hr>
+                  ♿ Sedia a rotelle: ${fmt(acc.sedia_a_rotelle)}<br>
+                  👁️ Ausili visivi: ${fmt(acc.ausili_visivi)}<br>
+                  🔊 Supporto uditivo: ${fmt(acc.supporto_uditivo)}
+                `);
+              }
+            });
+            markerLayer.addTo(markerGroup);
+            aggiornaLista(data.features || []);
+
+            if (!data.features || data.features.length === 0) {
+              document.getElementById('siti-list').innerHTML =
+                '<li class="list-group-item text-muted">Nessun risultato: prova ad allentare i filtri.</li>';
+            }
+          })
+          .catch(err => console.error("Errore fetch:", err));
+      }
+
+      function fmt(v) {
+        if (v === true) return 'Sì';
+        if (v === false) return 'No';
+        return '–';
+      }
+
+      function aggiornaLista(features) {
+        const ul = document.getElementById('siti-list');
+        ul.innerHTML = '';
+        features.forEach(f => {
+          const p = f.properties;
+          const acc = p.acc || {};
+          const li = document.createElement('li');
+          li.className = 'list-group-item';
+          li.innerHTML = `
+            <strong>${p.name}</strong> – ${p.city||''} ${p.region||''} (${p.category||''})
+            <div class="small text-muted mt-1">
+              ♿ ${fmt(acc.sedia_a_rotelle)} • 👁️ ${fmt(acc.ausili_visivi)} • 🔊 ${fmt(acc.supporto_uditivo)}
+            </div>`;
+          ul.appendChild(li);
+        });
+      }
+
+      // Eventi automatici per i filtri
+      ['categoria', 'wheelchair', 'ausili_visivi', 'supporto_uditivo', 'acc_mode']
+        .forEach(id => document.getElementById(id)?.addEventListener('change', caricaSiti));
+
+      // Ricerca con debounce
+      document.getElementById('q')?.addEventListener('input', () => {
+        clearTimeout(window._searchTimer);
+        window._searchTimer = setTimeout(caricaSiti, 400);
+      });
+
+      // Checkbox “solo con dati”
+      document.getElementById('has_acc_data')?.addEventListener('change', caricaSiti);
+
+      // Prima chiamata
+      caricaSiti();
+    </script>
+  </body>
+</html>

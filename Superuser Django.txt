@@ -1,0 +1,6 @@
+Superuser Django
+
+Username (leave blank to use 'eliap'): 
+Email address: Parlapianoelia26@gmail.com
+
+Password : Elia-2020

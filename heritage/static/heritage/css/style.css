@@ -1,0 +1,124 @@
+:root{
+  --brand-600:#1e73be;
+  --brand-700:#155a94;
+  --bg:#fafafa;
+  --card:#ffffff;
+  --text:#222;
+  --muted:#666;
+  --ring: rgba(30,115,190,0.35);
+  --shadow: 0 4px 12px rgba(0,0,0,.08);
+  --shadow-sm: 0 2px 6px rgba(0,0,0,.06);
+}
+
+body{
+  font-family:"Inter","Segoe UI",Roboto,system-ui,sans-serif;
+  color:var(--text);
+  background:var(--bg);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+.navbar{
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+
+main{
+  padding:1.5rem;
+  max-width:1200px;
+  margin:auto;
+}
+
+h1,h2,h3{ letter-spacing:.2px }
+h2, h3{ color:var(--brand-600); margin-top:1.2rem; margin-bottom:.8rem }
+
+.card-itinerary{
+  background:var(--card);
+  border:1px solid #eaeaea;
+  border-radius:14px;
+  box-shadow:var(--shadow-sm);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.card-itinerary:hover{
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: #e2e8f0;
+}
+.card-itinerary .card-title{ margin-bottom:.25rem }
+.card-itinerary .card-text{ color:var(--muted) }
+
+.acc-badges{ display:flex; gap:.35rem; flex-wrap:wrap }
+.badge-access{
+  display:inline-flex; align-items:center; gap:.25rem;
+  background:#f4f9ff; color:#0b4f83; border:1px solid #d8ecff;
+  padding:.25rem .5rem; border-radius:999px; font-size:.8rem; font-weight:600;
+}
+.badge-access .sym{ font-size:1rem; line-height:1 }
+
+.list-group-item{ border-color:#eee }
+.list-group-numbered>.list-group-item::before{
+  background:#e9f3ff; color:#0b4f83;
+}
+
+.leaflet-container{ border-radius:12px; box-shadow:var(--shadow-sm); outline:none }
+.leaflet-container:focus-visible{ box-shadow:0 0 0 4px var(--ring) }
+
+.form-control:focus, .form-select:focus, .form-check-input:focus{
+  border-color:var(--brand-600);
+  box-shadow:0 0 0 .2rem var(--ring);
+}
+
+.btn-soft-primary{
+  color:var(--brand-700);
+  background:#e9f3ff; border:1px solid #d8ecff;
+}
+.btn-soft-primary:hover{ background:#dff0ff; border-color:#cde6ff }
+
+.btn-soft-success{
+  color:#14532d; background:#e9f9ef; border:1px solid #c9f0d8;
+}
+.btn-soft-success:hover{ background:#dcf6e7; border-color:#b9e9cc }
+
+.btn-ghost{
+  background:transparent; border:1px dashed #cfd8e3; color:#334155;
+}
+.btn-ghost:hover{ background:#f8fafc; border-style:solid }
+
+.pagination .page-link{ border-color:#e5e7eb; color:#334155 }
+.pagination .page-item.active .page-link{
+  background:var(--brand-600); border-color:var(--brand-600)
+}
+
+.sites-list{
+  list-style:none; margin:0; padding:0; border-radius:12px;
+  overflow:hidden; box-shadow:var(--shadow-sm); background:var(--card);
+}
+.sites-list li{
+  display:flex; justify-content:space-between; align-items:center;
+  gap:1rem; padding:.85rem 1rem; border-bottom:1px solid #eee; transition: background .18s ease;
+}
+.sites-list li:hover{ background:#f7fbff }
+.site-name{ font-weight:650; color:#111 }
+.site-meta{ color:var(--muted); font-size:.92rem }
+
+footer{
+  background:var(--brand-600); color:#fff; text-align:center;
+  padding:.8rem; margin-top:2rem; font-size:.92rem;
+}
+
+@media (max-width: 768px){
+  .sites-list li{ flex-direction:column; align-items:flex-start }
+  .site-meta{ margin-top:.3rem }
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f172a; --card:#0b1220; --text:#e5e7eb; --muted:#94a3b8;
+    --ring: rgba(59,130,246,.35);
+  }
+  .navbar{ box-shadow:none }
+  .card-itinerary{ border-color:#1e293b }
+  .list-group-item{ background:var(--card); color:var(--text); border-color:#1e293b }
+  .sites-list{ background:var(--card) }
+  .sites-list li{ border-color:#1e293b }
+}
